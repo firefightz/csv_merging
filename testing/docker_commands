@@ -1,0 +1,41 @@
+docker run --name pg-test \
+  -e POSTGRES_USER=testuser \
+  -e POSTGRES_PASSWORD=testpass \
+  -e POSTGRES_DB=testdb \
+  -p 5432:5432 \
+  -d postgres:15
+
+# Connect to the database to ensure it's running
+export PGPASSWORD='testpass'
+psql -h localhost -p 5432 -U testuser -d testdb
+or
+PGPASSWORD='testpass' psql -h localhost -p 5432 -U testuser -d testdb
+
+# Create a .env file for database connection
+# DATABASE_URL=postgresql://testuser:testpass@localhost:5432/testdb 
+echo "DATABASE_URL=postgresql://testuser:testpass@localhost:5432/testdb" > ../.env
+
+# adding a stand alone application
+1. Install PyInstaller
+Activate your virtual environment, then:
+pip install pyinstaller
+2. Prepare Your Script
+Make sure your script works perfectly in your dev environment and reads .env correctly.
+For example, your CLI app: cli_crud_app_rich_full.py.
+The .env file should be in the same directory as the final executable.
+Your code already uses python-dotenv to read it.
+3. Create the Standalone Executable
+Run PyInstaller:
+pyinstaller --onefile --name my_cli_app cli_crud_app_rich_full.py
+Explanation:
+--onefile → produces a single executable instead of a folder.
+--name my_cli_app → the output binary will be called my_cli_app.
+cli_crud_app_rich_full.py → your Python script.
+After running, you’ll see a new dist folder:
+dist/my_cli_app
+This is the standalone executable.
+4. Test the Executable
+Copy your .env file to the same folder as the executable.
+Run it:
+./my_cli_app
+Everything should work exactly like before, no Python installation or pip packages needed on the user machine.
