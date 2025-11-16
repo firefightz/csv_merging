@@ -1,40 +1,52 @@
-import pandas as pd
 import boto3
 import json
+import pandas as pd
 
-# 1. Read CSV files
-persons_df = pd.read_csv("person.csv")  # name, weight, height, school
-schools_df = pd.read_csv("school.csv")  # name, address, city
+PERSON_CSV = "person.csv"
+SCHOOL_CSV = "school.csv"
+QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/123456789012/my-queue"
 
-# 2. Merge CSVs on the school name
-merged_df = pd.merge(
-    persons_df, 
-    schools_df, 
-    left_on="school", 
-    right_on="name", 
-    suffixes=('_person', '_school')
-)
+def load_data():
+    persons = pd.read_csv(PERSON_CSV)
+    schools = pd.read_csv(SCHOOL_CSV)
 
-# 3. Create flat JSON messages
-# Select and rename columns
-merged_df = merged_df.rename(columns={
-    "name_person": "name",
-    "weight": "weight",
-    "name_school": "school_name",
-    "address": "school_address"
-})
-
-# Only keep the needed columns
-final_df = merged_df[["name", "weight", "school_name", "school_address"]]
-
-# Convert each row to JSON and send to SQS
-sqs = boto3.client('sqs', region_name='us-east-1')  # replace with your region
-queue_url = "https://sqs.us-east-1.amazonaws.com/123456789012/your-queue-name"  # replace with your queue URL
-
-for _, row in final_df.iterrows():
-    msg = row.to_dict()
-    response = sqs.send_message(
-        QueueUrl=queue_url,
-        MessageBody=json.dumps(msg)
+    # Join on school name
+    merged = persons.merge(
+        schools,
+        left_on="school",
+        right_on="name",
+        how="left",
+        suffixes=("", "_school")
     )
-    print(f"Sent message ID: {response['MessageId']}")
+
+    return merged
+
+def build_message(row):
+    return {
+        "name": row["name"],
+        "weight": str(row["weight"]),
+        "height": str(row["height"]),
+        "school_name": row["name_school"],
+        "school_address": row["address"],
+        "school_city": row["city"]
+    }
+
+def send_to_sqs(messages):
+    sqs = boto3.client("sqs")
+
+    for msg in messages:
+        sqs.send_message(
+            QueueUrl=QUEUE_URL,
+            MessageBody=json.dumps(msg)
+        )
+        print("Sent:", msg["name"])
+
+def main():
+    df = load_data()
+
+    payloads = [build_message(row) for _, row in df.iterrows()]
+
+    send_to_sqs(payloads)
+
+if __name__ == "__main__":
+    main()
