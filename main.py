@@ -7,8 +7,8 @@ SCHOOL_CSV = "school.csv"
 QUEUE_URL = "https://sqs.us-east-1.amazonaws.com/123456789012/my-queue"
 
 def load_data():
-    persons = pd.read_csv(PERSON_CSV)
-    schools = pd.read_csv(SCHOOL_CSV)
+    persons = pd.read_csv(PERSON_CSV, sep="|")
+    schools = pd.read_csv(SCHOOL_CSV, sep=","
 
     # Join on school name
     merged = persons.merge(

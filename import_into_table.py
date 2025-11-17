@@ -56,3 +56,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+# persons = pd.read_csv(PERSON_CSV, sep="|", dtype=str)
+#persons = pd.read_csv(PERSON_CSV, sep="|", engine="python")
